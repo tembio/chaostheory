@@ -1,0 +1,17 @@
+{
+  "eventRateMean": 10,
+  "eventRateStd": 10,
+  "interval": 500,
+  "maxNumberOfUsers": 10,
+  "defaultNumberOfUsers": 5,
+  "possibleBetValues": {
+    "currencies": {
+      "BTC": 0.00001058,
+      "ETH": 0.00040267,
+      "USD": 1
+    },
+    "games": ["Poker", "Blackjack", "Roulette"],
+    "distributor": ["DistributorX", "DistributorZ", "DistributorY"],
+    "studio": ["StudioX", "StudioZ", "StudioY"]
+  }
+}
