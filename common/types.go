@@ -1,25 +1,11 @@
-package main
-
-// Config holds the configuration for event generation
-type Config struct {
-	EventRateMean        uint              `json:"eventRateMean"`
-	EventRateStd         uint              `json:"eventRateStd"`
-	Interval             uint              `json:"interval"`
-	MaxNumberOfUsers     uint              `json:"maxNumberOfUsers"`
-	DefaultNumberOfUsers uint              `json:"defaultNumberOfUsers"`
-	PossibleBetValues    PossibleBetValues `json:"possibleBetValues"`
-}
-
-// PossibleBetValues represents the possible values for a bet event
-type PossibleBetValues struct {
-	Currencies  map[string]float64 `json:"currencies"`
-	Games       []string           `json:"games"`
-	Distributor []string           `json:"distributor"`
-	Studio      []string           `json:"studio"`
-}
+package common
 
 // EventType represents the type of event
 type EventType string
+
+func (e EventType) String() string {
+	return string(e)
+}
 
 const (
 	EventTypeBet        EventType = "bet"

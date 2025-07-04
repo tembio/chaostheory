@@ -1,0 +1,8 @@
+# Use the official RabbitMQ image from Docker Hub
+FROM rabbitmq:3-management
+
+# Expose the default AMQP port and the management plugin port
+EXPOSE 5673 15673
+
+# No extra configuration needed for a basic instance
+# The management UI will be available at http://localhost:15673 (guest/guest)

@@ -3,7 +3,17 @@ package main
 import (
 	"math/rand"
 	"time"
+
+	"common"
 )
+
+// PossibleBetValues represents the possible values for a bet event
+type PossibleBetValues struct {
+	Currencies  map[string]float64 `json:"currencies"`
+	Games       []string           `json:"games"`
+	Distributor []string           `json:"distributor"`
+	Studio      []string           `json:"studio"`
+}
 
 type EventFactory struct {
 	PossibleBetValues *PossibleBetValues
@@ -13,7 +23,7 @@ type EventFactory struct {
 }
 
 // CreateBetEvent creates a bet event with random values
-func (ef *EventFactory) CreateBetEvent(userID uint, eventType EventType) BetEvent {
+func (ef *EventFactory) CreateBetEvent(userID uint, eventType common.EventType) common.BetEvent {
 	possibleValues := ef.PossibleBetValues
 
 	amount := rand.Float64()*1000 + 1
@@ -29,7 +39,7 @@ func (ef *EventFactory) CreateBetEvent(userID uint, eventType EventType) BetEven
 	timestamp := time.Now().UTC().Format(time.RFC3339)
 
 	ef.eventIDCounter++
-	betEvent := BetEvent{
+	betEvent := common.BetEvent{
 		EventID:      ef.eventIDCounter,
 		EventType:    eventType,
 		UserID:       userID,
@@ -46,10 +56,10 @@ func (ef *EventFactory) CreateBetEvent(userID uint, eventType EventType) BetEven
 }
 
 // CreateUserEvent returns a UserEvent with a monotonically increasing id
-func (ef *EventFactory) CreateUserEvent() UserEvent {
+func (ef *EventFactory) CreateUserEvent() common.UserEvent {
 	ef.userCounter++
 	ef.eventIDCounter++
-	userEvent := UserEvent{EventID: ef.eventIDCounter, EventType: EventTypeCreateUser, UserID: ef.eventIDCounter}
+	userEvent := common.UserEvent{EventID: ef.eventIDCounter, EventType: common.EventTypeCreateUser, UserID: ef.userCounter}
 
 	return userEvent
 }

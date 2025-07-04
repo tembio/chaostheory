@@ -3,6 +3,8 @@ package main
 import (
 	"testing"
 	"time"
+
+	"common"
 )
 
 func getTestPossibleBetValues() *PossibleBetValues {
@@ -17,7 +19,7 @@ func getTestPossibleBetValues() *PossibleBetValues {
 func TestCreateBetEvent(t *testing.T) {
 	factory := NewEventFactory(getTestPossibleBetValues())
 	userID := uint(42)
-	eventType := EventTypeBet
+	eventType := common.EventTypeBet
 	betEvent := factory.CreateBetEvent(userID, eventType)
 
 	if betEvent.UserID != userID {
@@ -78,8 +80,8 @@ func TestCreateUserEvent(t *testing.T) {
 	if userEvent1.EventID == 0 {
 		t.Errorf("unexpected userEvent1: %+v", userEvent1)
 	}
-	if userEvent1.EventType != EventTypeCreateUser {
-		t.Errorf("expected EventType %v, got %v", EventTypeCreateUser, userEvent1.EventType)
+	if userEvent1.EventType != common.EventTypeCreateUser {
+		t.Errorf("expected EventType %v, got %v", common.EventTypeCreateUser, userEvent1.EventType)
 	}
 	if userEvent2.EventID != userEvent1.EventID+1 {
 		t.Errorf("unexpected userEvent2: %+v", userEvent2)
@@ -87,8 +89,8 @@ func TestCreateUserEvent(t *testing.T) {
 	if userEvent2.UserID != userEvent1.UserID+1 {
 		t.Errorf("unexpected userEvent2: %+v", userEvent2)
 	}
-	if userEvent2.EventType != EventTypeCreateUser {
-		t.Errorf("expected EventType %v, got %v", EventTypeCreateUser, userEvent2.EventType)
+	if userEvent2.EventType != common.EventTypeCreateUser {
+		t.Errorf("expected EventType %v, got %v", common.EventTypeCreateUser, userEvent2.EventType)
 	}
 }
 

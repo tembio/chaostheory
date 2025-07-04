@@ -3,6 +3,8 @@ package main
 import (
 	"testing"
 	"time"
+
+	"common"
 )
 
 func getTestConfig() *Config {
@@ -25,7 +27,7 @@ func TestGenerateRandomEvents_UserCreation(t *testing.T) {
 	if len(events) != 1 {
 		t.Fatalf("expected 1 event, got %d", len(events))
 	}
-	if _, ok := events[0].(UserEvent); !ok {
+	if _, ok := events[0].(common.UserEvent); !ok {
 		t.Errorf("expected UserEvent, got %T", events[0])
 	}
 }
@@ -44,10 +46,10 @@ func TestGenerateRandomEvents_BetEvents(t *testing.T) {
 	for i := 0; i < 20; i++ {
 		events := gen.GenerateRandomEvents()
 		if len(events) == 2 {
-			if be, ok := events[0].(BetEvent); ok && be.EventType == EventTypeBet {
+			if be, ok := events[0].(common.BetEvent); ok && be.EventType == common.EventTypeBet {
 				foundBet = true
 			}
-			if be, ok := events[1].(BetEvent); ok && (be.EventType == EventTypeWin || be.EventType == EventTypeLoss) {
+			if be, ok := events[1].(common.BetEvent); ok && (be.EventType == common.EventTypeWin || be.EventType == common.EventTypeLoss) {
 				foundWinOrLoss = true
 			}
 		}
@@ -64,10 +66,10 @@ func TestGenerateRandomEvents_BetEvents(t *testing.T) {
 func TestRunEventGeneration_ProducesEvents(t *testing.T) {
 	factory := NewEventFactory(getTestPossibleBetValues())
 	gen := NewEventGenerator(getTestConfig(), factory)
-	ch := make(chan []Event, 2)
+	ch := make(chan []common.Event, 2)
 
 	go func() {
-		gen.RunEventGeneration(func(events []Event) {
+		gen.RunEventGeneration(func(events []common.Event) {
 			ch <- events
 		})
 	}()

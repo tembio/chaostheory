@@ -1,7 +1,7 @@
 {
-  "eventRateMean": 10,
-  "eventRateStd": 10,
-  "interval": 500,
+  "eventRateMean": 3,
+  "eventRateStd": 3,
+  "interval": 1000,
   "maxNumberOfUsers": 10,
   "defaultNumberOfUsers": 5,
   "possibleBetValues": {
