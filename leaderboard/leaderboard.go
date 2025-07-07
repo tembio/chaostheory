@@ -112,6 +112,21 @@ func (lb *Leaderboard) Update(event common.BetEvent) ([]*UpdatedData, error) {
 	return updates, nil
 }
 
+// LoadScores populates the Leaderboard data with the provided scores
+func (lb *Leaderboard) LoadScores(scores map[uint][]User) {
+	if lb.competitionsResults == nil {
+		lb.competitionsResults = scoresPerCompetition{}
+	}
+	for compID, users := range scores {
+		if _, ok := lb.competitionsResults[compID]; !ok {
+			lb.competitionsResults[compID] = usersIDToUser{}
+		}
+		for _, user := range users {
+			lb.competitionsResults[compID][user.ID] = &user
+		}
+	}
+}
+
 // toFloat64 safely converts an interface{} to float64, handling int, int64, and float64
 func toFloat64(val any) (float64, error) {
 	switch v := val.(type) {
