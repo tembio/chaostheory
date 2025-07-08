@@ -2,7 +2,7 @@
 FROM rabbitmq:3-management
 
 # Expose the default AMQP port and the management plugin port
-EXPOSE 5673 15673
+EXPOSE 5672 15672
 
 # No extra configuration needed for a basic instance
-# The management UI will be available at http://localhost:15673 (guest/guest)
+# The management UI will be available at http://localhost:15672 (guest/guest)

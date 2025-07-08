@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"time"
 
 	"common"
 )
@@ -25,15 +26,17 @@ func main() {
 		return
 	}
 
+	time.Sleep(30 * time.Second)
+
 	eventFactory := NewEventFactory(&config.PossibleBetValues)
 	eventGenerator := NewEventGenerator(config, eventFactory)
 
 	// Read RabbitMQ port from environment variable, default to 5672 if not set
-	rabbitPort := os.Getenv("RABBIT_PORT")
+	rabbitPort := os.Getenv("RABBITMQ_PORT")
 	if rabbitPort == "" {
-		rabbitPort = "5673"
+		rabbitPort = "5672"
 	}
-	rabbitURL := fmt.Sprintf("amqp://guest:guest@localhost:%s/", rabbitPort)
+	rabbitURL := fmt.Sprintf("amqp://guest:guest@rabbitleaderboard:%s/", rabbitPort)
 	userQueue := "user_events"
 	betQueue := "bet_events"
 

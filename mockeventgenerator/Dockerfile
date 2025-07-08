@@ -1,8 +1,14 @@
 # Build Go app and run RabbitMQ in one container
 FROM golang:1.22 AS builder
-WORKDIR /app
+WORKDIR /
 COPY . .
-RUN cd mockeventgenerator && go build -o app
 
-# Start both RabbitMQ and the Go app
-CMD ["sh", "-c", "./app"]
+# Remove the replace directive for common and use the local ./common path inside the container
+RUN sed -i '/replace common =>/c\replace common => ./common' go.mod
+RUN go mod download
+RUN go build -o mockeventgenerator
+
+EXPOSE 5672
+
+# Start both RabbitMQ and the mockeventgenerator
+CMD ["sh", "-c", "./mockeventgenerator"]

@@ -1,0 +1,21 @@
+services:
+  rabbitleaderboard:
+    image: rabbitleaderboard:latest
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - localnet
+
+  mockeventgenerator:
+    image: mockeventgenerator:latest
+    environment:
+      - RABBITMQ_PORT=5672
+    depends_on:
+      - rabbitleaderboard
+    networks:
+      - localnet
+
+networks:
+  localnet:
+    driver: bridge

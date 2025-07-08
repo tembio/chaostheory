@@ -19,12 +19,11 @@ There could be a mock for tests, or another one to, for example, print messages 
 
 ---
 
-## Run RabbitMQ
+## How to run
+Run `./build.sh` to create the images
+Run `docker-compose up` to start rabbit and the event generator
+You can go to the rabbit console to see the messages http://localhost:15672/ (user: guest, password: guest)
 
-```sh
-docker build -f Dockerfile.rabbitmq -t myrabbit .
-docker run -p 5672:5673 -p 15672:15673 myrabbit
-```
 
 ### Improvements and TODOs
 - Add logging
