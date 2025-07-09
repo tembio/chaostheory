@@ -1,5 +1,4 @@
-# Build Go app and run RabbitMQ in one container
-FROM golang:1.22 AS builder
+FROM golang:1.22
 WORKDIR /
 COPY . .
 

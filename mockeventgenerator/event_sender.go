@@ -10,7 +10,7 @@ import (
 // The Send method receives a value of any type and returns an error
 
 type Sender interface {
-	Send(msg any) error
+	Send(msg any, eventType string) error
 }
 
 // RabbitMQSender implements Sender and sends messages to a RabbitMQ queue
@@ -47,7 +47,7 @@ func NewRabbitMQSender(url, queueName string) (*RabbitMQSender, error) {
 	return &RabbitMQSender{conn: conn, channel: ch, queueName: queueName}, nil
 }
 
-func (s *RabbitMQSender) Send(msg any) error {
+func (s *RabbitMQSender) Send(msg any, eventType string) error {
 	body, err := json.Marshal(msg)
 	if err != nil {
 		return err
@@ -60,6 +60,7 @@ func (s *RabbitMQSender) Send(msg any) error {
 		amqp091.Publishing{
 			ContentType: "application/json",
 			Body:        body,
+			Headers:     amqp091.Table{"event_type": eventType},
 		},
 	)
 }

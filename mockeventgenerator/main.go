@@ -26,24 +26,22 @@ func main() {
 		return
 	}
 
-	time.Sleep(30 * time.Second)
-
 	eventFactory := NewEventFactory(&config.PossibleBetValues)
 	eventGenerator := NewEventGenerator(config, eventFactory)
 
-	// Read RabbitMQ port from environment variable, default to 5672 if not set
 	rabbitPort := os.Getenv("RABBITMQ_PORT")
-	if rabbitPort == "" {
-		rabbitPort = "5672"
-	}
 	rabbitURL := fmt.Sprintf("amqp://guest:guest@rabbitleaderboard:%s/", rabbitPort)
 	userQueue := "user_events"
 	betQueue := "bet_events"
 
-	userSender, err := NewRabbitMQSender(rabbitURL, userQueue)
-	if err != nil {
-		fmt.Printf("Error creating user event sender: %v\n", err)
-		return
+	var userSender *RabbitMQSender
+	for {
+		userSender, err = NewRabbitMQSender(rabbitURL, userQueue)
+		if err == nil {
+			break
+		}
+		fmt.Printf("RabbitMQ not ready, retrying in 100ms: %v\n", err)
+		time.Sleep(100 * time.Millisecond)
 	}
 	defer userSender.Close()
 
@@ -56,13 +54,14 @@ func main() {
 
 	var Func = func(events []common.Event) {
 		for _, event := range events {
-			switch event.GetEventType() {
+			eventType := event.GetEventType()
+			switch eventType {
 			case common.EventTypeCreateUser:
-				if err := userSender.Send(event); err != nil {
+				if err := userSender.Send(event, eventType.String()); err != nil {
 					fmt.Printf("Failed to send user event: %v\n", err)
 				}
 			default:
-				if err := betSender.Send(event); err != nil {
+				if err := betSender.Send(event, eventType.String()); err != nil {
 					fmt.Printf("Failed to send bet event: %v\n", err)
 				}
 			}
