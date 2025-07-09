@@ -78,7 +78,8 @@ func (lb *Leaderboard) Update(event common.BetEvent) ([]*UpdatedData, error) {
 			continue // Skip this match if conversion fails
 		}
 
-		if amount == 0 {
+		const epsilon = 1e-9
+		if amount < epsilon && amount > -epsilon {
 			continue // Skip rules that evaluate to 0
 		}
 
