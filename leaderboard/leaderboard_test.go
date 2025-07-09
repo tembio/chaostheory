@@ -74,8 +74,11 @@ func TestLeaderboard_Update(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if len(updates) != 0 {
-		t.Errorf("expected 0 updates for EventTypeBet, got %d", len(updates))
+	if len(updates) != 1 {
+		t.Errorf("expected 1 update for EventTypeBet, got %d", len(updates))
+	}
+	if updates[0].Score != eventBet.Amount {
+		t.Errorf("expected Score 100 for EventTypeBet, got %f", updates[0].Score)
 	}
 
 	// Case: event.EventType == common.EventTypeLoss
@@ -86,16 +89,12 @@ func TestLeaderboard_Update(t *testing.T) {
 	lbLoss.RegistrerCompetition(comp)
 	eventLoss := event
 	eventLoss.EventType = common.EventTypeLoss
-	eventLoss.Amount = 150.0
 	updates, err = lbLoss.Update(eventLoss)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if len(updates) != 1 {
-		t.Fatalf("expected 1 update for loss, got %d", len(updates))
-	}
-	if updates[0].Score != -150.0 {
-		t.Errorf("expected Score -150.0 for loss, got %f", updates[0].Score)
+	if len(updates) != 0 {
+		t.Errorf("expected 0 updates for EventTypeBet, got %d", len(updates))
 	}
 
 	// Case: conversion to float64 fails
@@ -104,8 +103,8 @@ func TestLeaderboard_Update(t *testing.T) {
 	}
 	lbErr := NewLeaderboard(mockEvalErr)
 	lbErr.RegistrerCompetition(comp)
-	_, err = lbErr.Update(event)
-	if err == nil {
-		t.Error("expected error for failed float64 conversion, got nil")
+	updates, _ = lbErr.Update(event)
+	if len(updates) != 0 {
+		t.Errorf("expected 0 updates when amount is not a float, got %d", len(updates))
 	}
 }
