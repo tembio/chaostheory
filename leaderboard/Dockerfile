@@ -1,34 +1,22 @@
-# Start from the official Golang image
-FROM golang:1.22-alpine as builder
+FROM golang:1.22-alpine
+ENV CGO_ENABLED=1
 
-# Install build dependencies
 RUN apk add --no-cache gcc musl-dev sqlite-dev
 
-# Set the working directory
-WORKDIR /app
-
-# Copy the source code
+WORKDIR /
 COPY . .
 
 # Remove the replace directive for common and use the local ./common path inside the container
 RUN sed -i '/replace common =>/c\replace common => ./common' go.mod
-
-# Download dependencies (including SQLite driver)
 RUN go mod download
-
-# Build the Go app (static binary)
 RUN go build -o leaderboard .
 
-# Final image
-FROM alpine:latest
+# Ensure init_db.sh is executable and initialize the database schema
+RUN chmod +x ./init_db.sh
+RUN ./init_db.sh leaderboard.db
 
 # Install SQLite runtime
 RUN apk add --no-cache sqlite-libs
-
-WORKDIR /app
-
-# Copy the built binary from the builder
-COPY --from=builder /app/leaderboard .
 
 # Expose a port if your app serves HTTP (optional)
 # EXPOSE 8080

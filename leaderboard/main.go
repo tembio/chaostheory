@@ -2,66 +2,118 @@ package main
 
 import (
 	"fmt"
-
-	"common"
+	"os"
+	"time"
 )
 
 func main() {
-	comps := []Competition{
-		{
-			ID:        1,
-			Name:      "Monthly Challenge",
-			ScoreRule: "event_type=='win' && distributor=='evo' ? amount : 0",
-			StartTime: "2023-10-01T00:00:00Z",
-			EndTime:   "2023-10-31T23:59:59Z",
-			Rewards:   []string{"Gold Medal", "Silver Medal", "Bronze Medal"},
-		},
-		{
-			ID:        2,
-			Name:      "Weekly Sprint",
-			ScoreRule: "event_type=='bet' && game=='Poker' ? amount : 0",
-			StartTime: "2023-10-01T00:00:00Z",
-			EndTime:   "2023-10-31T23:59:59Z",
-			Rewards:   []string{"Gold Medal", "Silver Medal", "Bronze Medal"},
-		},
-	}
+	// comps := []Competition{
+	// 	{
+	// 		ID:        1,
+	// 		Name:      "Monthly Challenge",
+	// 		ScoreRule: "event_type=='bet' && distributor=='evo' ? amount : 0",
+	// 		StartTime: "2023-10-01T00:00:00Z",
+	// 		EndTime:   "2023-10-31T23:59:59Z",
+	// 		Rewards:   []string{"Gold Medal", "Silver Medal", "Bronze Medal"},
+	// 	},
+	// 	{
+	// 		ID:        2,
+	// 		Name:      "Weekly Sprint",
+	// 		ScoreRule: "event_type=='bet' && game=='Poker' ? amount : 0",
+	// 		StartTime: "2023-10-01T00:00:00Z",
+	// 		EndTime:   "2023-10-31T23:59:59Z",
+	// 		Rewards:   []string{"Gold Medal", "Silver Medal", "Bronze Medal"},
+	// 	},
+	// }
 
-	event := common.BetEvent{
-		EventID:      1,
-		EventType:    "win",
-		UserID:       42,
-		Amount:       100.0,
-		Currency:     "USD",
-		ExchangeRate: 1.0,
-		Game:         "Poker",
-		Distributor:  "evo",
-		Studio:       "StudioX",
-		Timestamp:    "2023-10-01T12:00:00Z",
-	}
+	// betEvent := common.BetEvent{
+	// 	EventID:      1,
+	// 	EventType:    "bet",
+	// 	UserID:       42,
+	// 	Amount:       100.0,
+	// 	Currency:     "USD",
+	// 	ExchangeRate: 1.0,
+	// 	Game:         "Poker",
+	// 	Distributor:  "evo",
+	// 	Studio:       "StudioX",
+	// 	Timestamp:    "2023-10-01T12:00:00Z",
+	// }
+	fmt.Println("Leaderboard service started")
 
 	ruleEvaluator := &BetRuleEvaluator{}
 	leaderboard := NewLeaderboard(ruleEvaluator)
 
-	// Register competitions in the leaderboard
-	leaderboard.RegistrerCompetition(&comps[0])
-	leaderboard.RegistrerCompetition(&comps[1])
-
-	UpdatedData, err := leaderboard.Update(event)
+	// Initialize SQLiteScoreRepository
+	dbPath := "leaderboard.db"
+	scoreRepository, err := NewSQLiteScoreRepository(dbPath)
 	if err != nil {
-		fmt.Printf("Error updating leaderboard: %v\n", err)
+		fmt.Printf("Error initializing SQLiteScoreRepository: %v\n", err)
+		return
 	}
+	defer scoreRepository.db.Close()
 
-	for _, update := range UpdatedData {
-		fmt.Printf("Competition ID: %d, User ID: %d, Score: %.2f\n",
-			update.CompetitionID, update.UserID, update.Score)
+	// Restore existing scores from SQLite
+	allScores, err := scoreRepository.GetAllScores()
+	if err != nil {
+		fmt.Printf("Error retrieving scores: %v\n", err)
+		return
 	}
+	leaderboard.LoadScores(allScores)
 
-	fmt.Println("Competitions Results:")
-	for compID, users := range leaderboard.competitionsResults {
-		fmt.Printf("Competition ID: %d\n", compID)
-		for _, user := range users {
-			fmt.Printf("  User ID: %d, Score: %.2f\n", user.ID, user.Score)
+	// Initialize RabbitMQ receivers
+	rabbitPort := os.Getenv("RABBITMQ_PORT")
+	rabbitURL := fmt.Sprintf("amqp://guest:guest@rabbitleaderboard:%s/", rabbitPort)
+	betQueue := "bet_events"
+
+	var betReceiver *RabbitMQReceiver
+	for {
+		betReceiver, err = NewRabbitMQReceiver(rabbitURL, betQueue)
+		if err == nil {
+			break
 		}
+		fmt.Printf("RabbitMQ not ready, retrying in 100ms: %v\n", err)
+		time.Sleep(100 * time.Millisecond)
 	}
+	defer betReceiver.Close()
+
+	// receiver := NewMockBetEventReceiver()
+
+	go func() {
+		for {
+			err := betReceiver.Receive(func(body []byte, acknowledgeEvent func()) error {
+				err := BetEventHandler(body, leaderboard, scoreRepository, acknowledgeEvent)
+				if err != nil {
+					fmt.Printf("Error handling bet event: %v\n", err)
+				}
+				return err
+			})
+			if err != nil {
+				fmt.Printf("Error receiving bet event: %v\n", err)
+			}
+		}
+	}()
+
+	stop := make(chan bool)
+	for {
+		<-stop // Block until an event is received
+	}
+
+	// 	var userEvent common.UserEvent
+	// if err := json.Unmarshal(body, &userEvent); err == nil {
+	// 	fmt.Printf("Received UserEvent: %+v\n", userEvent)
+	// 	return nil
+	// }
+
+	// Register competitions in the leaderboard
+	// leaderboard.RegistrerCompetition(&comps[0])
+	// leaderboard.RegistrerCompetition(&comps[1])
+
+	// fmt.Println("Competitions Results:")
+	// for compID, users := range leaderboard.competitionsResults {
+	// 	fmt.Printf("Competition ID: %d\n", compID)
+	// 	for _, user := range users {
+	// 		fmt.Printf("  User ID: %d, Score: %.2f\n", user.ID, user.Score)
+	// 	}
+	// }
 
 }

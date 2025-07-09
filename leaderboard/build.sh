@@ -18,6 +18,6 @@ fi
 cp -r "$PARENT_DIR/common" "$SCRIPT_DIR/common"
 echo "[INFO] Copied 'common' directory into leaderboard."
 
-docker build -t leaderboard-app "$SCRIPT_DIR"
+docker build -t leaderboard "$SCRIPT_DIR"
 
 echo "[INFO] Build complete."
