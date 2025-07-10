@@ -2,103 +2,130 @@ package main
 
 import (
 	"fmt"
-	"os"
-	"time"
+	"leaderboard/handlers"
+	"leaderboard/internal"
+	"leaderboard/repositories"
+	"net/http"
+
+	"github.com/gorilla/mux"
+
+	"common"
 )
 
 func main() {
-	comps := []Competition{
-		{
-			ID:        1,
-			Name:      "Monthly Challenge",
-			ScoreRule: "event_type=='bet' && distributor=='evo' ? amount : 0",
-			StartTime: "2023-10-01T00:00:00Z",
-			EndTime:   "2023-10-31T23:59:59Z",
-			Rewards:   []string{"Gold Medal", "Silver Medal", "Bronze Medal"},
-		},
-		{
-			ID:        2,
-			Name:      "Weekly Sprint",
-			ScoreRule: "event_type=='bet' && game=='Poker' ? amount : 0",
-			StartTime: "2023-10-01T00:00:00Z",
-			EndTime:   "2023-10-31T23:59:59Z",
-			Rewards:   []string{"Gold Medal", "Silver Medal", "Bronze Medal"},
-		},
-	}
-
-	fmt.Println("Leaderboard service started")
-
-	ruleEvaluator := &BetRuleEvaluator{}
-	leaderboard := NewLeaderboard(ruleEvaluator)
-	// Register competitions in the leaderboard
-	leaderboard.RegistrerCompetition(&comps[0])
-	leaderboard.RegistrerCompetition(&comps[1])
-
 	// Initialize SQLiteScoreRepository
-	dbPath := "leaderboard.db"
-	scoreRepository, err := NewSQLiteScoreRepository(dbPath)
+	leaderboardsRepo, competitionsRepo, err := initialiseRepositories()
 	if err != nil {
-		fmt.Printf("Error initializing SQLiteScoreRepository: %v\n", err)
+		fmt.Printf("Error initializing repositories: %v\n", err)
 		return
 	}
-	defer scoreRepository.db.Close()
+	defer leaderboardsRepo.Close()
+	defer competitionsRepo.Close()
 
-	// Restore existing scores from SQLite
-	allScores, err := scoreRepository.GetAllScores()
-	if err != nil {
-		fmt.Printf("Error retrieving scores: %v\n", err)
+	defaultRuleEvaluator := &internal.BetRuleEvaluator{}
+	leaderboard := internal.NewLeaderboard(defaultRuleEvaluator)
+
+	// Load existing data from DB
+	if err := LoadLeaderBoardDataFromDB(leaderboard, leaderboardsRepo, competitionsRepo); err != nil {
+		fmt.Printf("Error loading leaderboard data from DB: %v\n", err)
 		return
 	}
-	leaderboard.LoadScores(allScores)
 
-	// Initialize RabbitMQ receivers
-	rabbitPort := os.Getenv("RABBITMQ_PORT")
-	rabbitURL := fmt.Sprintf("amqp://guest:guest@rabbitleaderboard:%s/", rabbitPort)
-	betQueue := "bet_events"
+	///////// RabbitMQ setup /////////
 
-	var betReceiver *RabbitMQReceiver
-	for {
-		betReceiver, err = NewRabbitMQReceiver(rabbitURL, betQueue)
-		if err == nil {
-			break
-		}
-		fmt.Printf("RabbitMQ not ready, retrying in 100ms: %v\n", err)
-		time.Sleep(100 * time.Millisecond)
-	}
-	defer betReceiver.Close()
+	// rabbitPort := os.Getenv("RABBITMQ_PORT")
+	// rabbitURL := fmt.Sprintf("amqp://guest:guest@rabbitleaderboard:%s/", rabbitPort)
+	// betQueue := "bet_events"
 
-	// receiver := NewMockBetEventReceiver()
-
-	go func() {
-		for {
-			err := betReceiver.Receive(func(body []byte, acknowledgeEvent func()) error {
-				err := BetEventHandler(body, leaderboard, scoreRepository, acknowledgeEvent)
-				if err != nil {
-					fmt.Printf("Error handling bet event: %v\n", err)
-				}
-				return err
-			})
-			if err != nil {
-				fmt.Printf("Error receiving bet event: %v\n", err)
-			}
-		}
-	}()
-
-	stop := make(chan bool)
-	for {
-		<-stop // Block until an event is received
-	}
-
-	// Register competitions in the leaderboard
-	// leaderboard.RegistrerCompetition(&comps[0])
-	// leaderboard.RegistrerCompetition(&comps[1])
-
-	// fmt.Println("Competitions Results:")
-	// for compID, users := range leaderboard.competitionsResults {
-	// 	fmt.Printf("Competition ID: %d\n", compID)
-	// 	for _, user := range users {
-	// 		fmt.Printf("  User ID: %d, Score: %.2f\n", user.ID, user.Score)
+	// var betReceiver *internal.RabbitMQReceiver
+	// for {
+	// 	betReceiver, err = internal.NewRabbitMQReceiver(rabbitURL, betQueue)
+	// 	if err == nil {
+	// 		break
 	// 	}
+	// 	fmt.Printf("RabbitMQ not ready, retrying in 100ms: %v\n", err)
+	// 	time.Sleep(100 * time.Millisecond)
 	// }
+	// defer betReceiver.Close()
 
+	// go func() {
+	// 	for {
+	// 		err := betReceiver.Receive(func(body []byte, acknowledgeEvent func()) error {
+	// 			err := handlers.BetEventHandler(body, leaderboard, leaderboardsRepo, acknowledgeEvent)
+	// 			if err != nil {
+	// 				fmt.Printf("Error handling bet event: %v\n", err)
+	// 			}
+	// 			return err
+	// 		})
+	// 		if err != nil {
+	// 			fmt.Printf("Error receiving bet event: %v\n", err)
+	// 		}
+	// 	}
+	// }()
+
+	///////// HTTP server setup /////////
+
+	// Set up HTTP handlers
+	leaderboardsHandler := handlers.NewLeaderboardsHandler(leaderboardsRepo)
+	competitionsHandler := handlers.NewCompetitionsHandler(competitionsRepo)
+
+	r := mux.NewRouter()
+	r.Handle("/leaderboards", http.HandlerFunc(leaderboardsHandler.GetLeaderboards)).Methods("GET")
+	r.Handle("/competitions", authMiddleware(http.HandlerFunc(competitionsHandler.CreateCompetition))).Methods("POST")
+
+	// Start the HTTP server
+	fmt.Println("Leaderboard API server listening on :8080")
+	http.ListenAndServe(":8080", r)
+}
+
+func initialiseRepositories() (*repositories.SQLiteLeaderboards, *repositories.SQLiteCompetitions, error) {
+	dbPath := "leaderboard.db"
+	leaderboardsRepo, err := repositories.NewSQLiteLeaderboardsRepository(dbPath)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error initializing SQLiteLeaderboardsRepository: %v", err)
+	}
+
+	competitionsRepo, err := repositories.NewSQLiteCompetitionsRepository(dbPath)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error initializing SQLiteCompetitionsRepository: %v", err)
+	}
+	return leaderboardsRepo, competitionsRepo, nil
+}
+
+func LoadLeaderBoardDataFromDB(lb *internal.Leaderboard, leaderboardsRepo *repositories.SQLiteLeaderboards, competitionsRepo *repositories.SQLiteCompetitions) error {
+	lbFromDB, err := leaderboardsRepo.GetAll()
+	if err != nil {
+		return fmt.Errorf("error retrieving leaderboards: %v", err)
+	}
+	lb.Load(lbFromDB)
+
+	competitions, err := loadCompetitions(competitionsRepo)
+	if err != nil {
+		return fmt.Errorf("error retrieving competitions: %v", err)
+	}
+	for _, comp := range competitions {
+		lb.RegisterCompetition(comp)
+	}
+	return nil
+}
+
+// authMiddleware is a simple middleware to check for a hardcoded Authorization header
+func authMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		token := r.Header.Get("Authorization")
+		if token != "Bearer secrettoken" {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+// loadCompetitions loads all competitions from the repository and returns them as a slice in memory
+func loadCompetitions(repo repositories.CompetitionsRepository) ([]*common.Competition, error) {
+	competitions, err := repo.GetAll()
+	if err != nil {
+		return nil, err
+	}
+	return competitions, nil
 }

@@ -1,4 +1,4 @@
-package main
+package internal
 
 import (
 	"common"
@@ -6,7 +6,7 @@ import (
 )
 
 type rulesToCompetitionID map[string]uint        // map[rule]competition
-type usersIDToUser map[uint]*User                // map[userID]User
+type usersIDToUser map[uint]*common.User         // map[userID]User
 type scoresPerCompetition map[uint]usersIDToUser // map[competitionID]map[userID]User
 
 type UpdatedData struct {
@@ -15,18 +15,11 @@ type UpdatedData struct {
 	Score         float64
 }
 
-type User struct {
-	ID    uint
-	Score float64
-}
-
-type Competition struct {
-	ID        uint
-	Name      string
-	ScoreRule string
-	StartTime string
-	EndTime   string
-	Rewards   []string
+type LeaderboardInterface interface {
+	// Update processes a bet event and returns updated scores for users in competitions
+	Update(event common.BetEvent) ([]*UpdatedData, error)
+	// RegisterCompetition registers a competition with its score rule
+	RegisterCompetition(comp *common.Competition)
 }
 
 // RuleEvaluator abstracts rule evaluation for Leaderboard
@@ -50,8 +43,19 @@ func NewLeaderboard(evaluator RuleEvaluator) *Leaderboard {
 	}
 }
 
-// RegistrerCompetition adds a new competition to the leaderboard
-func (lb *Leaderboard) RegistrerCompetition(comp *Competition) {
+// RegisterCompetition adds a new competition to the leaderboard
+// If the competition's score rule is empty or already registered, it skips registration.
+func (lb *Leaderboard) RegisterCompetition(comp *common.Competition) {
+	if comp == nil || comp.ScoreRule == "" {
+		// TODO: use logs
+		fmt.Printf("Skipping registration of competition due to empty ScoreRule\n")
+		return
+	}
+	if _, exists := lb.rulesToCompetition[comp.ScoreRule]; exists {
+		// TODO: use logs
+		fmt.Printf("Competition with ScoreRule '%s' already registered for competition ID %d\n", comp.ScoreRule, comp.ID)
+		return
+	}
 	lb.ruleEvaluator.AddRule(comp.ScoreRule)
 	lb.rulesToCompetition[comp.ScoreRule] = comp.ID
 }
@@ -96,7 +100,7 @@ func (lb *Leaderboard) Update(event common.BetEvent) ([]*UpdatedData, error) {
 			user.Score += amount
 			lb.competitionsResults[competitionID][event.UserID] = user
 		} else {
-			lb.competitionsResults[competitionID][event.UserID] = &User{
+			lb.competitionsResults[competitionID][event.UserID] = &common.User{
 				ID:    event.UserID,
 				Score: amount,
 			}
@@ -113,12 +117,12 @@ func (lb *Leaderboard) Update(event common.BetEvent) ([]*UpdatedData, error) {
 	return updates, nil
 }
 
-// LoadScores populates the Leaderboard data with the provided scores
-func (lb *Leaderboard) LoadScores(scores map[uint][]User) {
+// Load populates the Leaderboard data with the provided leaderboards
+func (lb *Leaderboard) Load(leaderboards map[uint][]common.User) {
 	if lb.competitionsResults == nil {
 		lb.competitionsResults = scoresPerCompetition{}
 	}
-	for compID, users := range scores {
+	for compID, users := range leaderboards {
 		if _, ok := lb.competitionsResults[compID]; !ok {
 			lb.competitionsResults[compID] = usersIDToUser{}
 		}

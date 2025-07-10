@@ -1,12 +1,15 @@
-package main
+package handlers
 
 import (
 	"common"
 	"encoding/json"
 	"fmt"
+	"leaderboard/internal"
+
+	"leaderboard/repositories"
 )
 
-func BetEventHandler(body []byte, leaderboard *Leaderboard, scoreRepository *SQLiteScoreRepository, acknowledgeEvent func()) error {
+func BetEventHandler(body []byte, leaderboard internal.LeaderboardInterface, leaderboardsRepo repositories.LeaderboardsRepository, acknowledgeEvent func()) error {
 	fmt.Printf("Handling bet event: %s\n", body)
 
 	var betEvent common.BetEvent
@@ -17,7 +20,7 @@ func BetEventHandler(body []byte, leaderboard *Leaderboard, scoreRepository *SQL
 		}
 
 		for _, update := range UpdatedData {
-			err := scoreRepository.Update(update.CompetitionID, update.UserID, update.Score)
+			err := leaderboardsRepo.Update(update.CompetitionID, update.UserID, update.Score)
 			if err != nil {
 				return fmt.Errorf("error storing score in SQLite: %v", err)
 			}
@@ -30,7 +33,8 @@ func BetEventHandler(body []byte, leaderboard *Leaderboard, scoreRepository *SQL
 	}
 }
 
-func UserEventHandler(body []byte, scoreRepository *SQLiteScoreRepository, acknowledgeEvent func()) error {
+// TODO
+func UserEventHandler(body []byte, leaderboardsRepo *repositories.SQLiteLeaderboards, acknowledgeEvent func()) error {
 	fmt.Printf("Handling user event: %s\n", body)
 
 	var userEvent common.UserEvent

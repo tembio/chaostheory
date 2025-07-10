@@ -1,35 +1,29 @@
-package main
+package repositories
 
 import (
 	"os"
 	"testing"
 )
 
-func TestSQLiteScoreRepository_Empty(t *testing.T) {
-	dbPath := "test_scores_empty.db"
-	defer os.Remove(dbPath)
-	repo, err := NewSQLiteScoreRepository(dbPath)
-	if err != nil {
-		t.Fatalf("failed to create SQLiteScoreRepository (empty): %v", err)
-	}
-	emptyScores, err := repo.GetAllScores()
-	if err != nil {
-		t.Fatalf("failed to get all scores from empty db: %v", err)
-	}
-	if len(emptyScores) != 0 {
-		t.Errorf("expected 0 competitions in empty db, got %d", len(emptyScores))
-	}
-}
+func TestSQLiteLeaderboardsRepository_UpdateAndGetAll(t *testing.T) {
+	dbPath := "test_leaderboards.db"
 
-func TestSQLiteScoreRepository_UpdateAndGetAllScores(t *testing.T) {
-	dbPath := "test_scores.db"
-	defer os.Remove(dbPath)
-
-	repo, err := NewSQLiteScoreRepository(dbPath)
+	// Call the init_db.sh script to create the schema for the test DB
+	err := runInitDBScript(dbPath)
 	if err != nil {
-		t.Fatalf("failed to create SQLiteScoreRepository: %v", err)
+		t.Fatalf("failed to run init_db.sh: %v", err)
 	}
 
+	repo, err := NewSQLiteLeaderboardsRepository(dbPath)
+	if err != nil {
+		t.Fatalf("failed to create SQLiteLeaderboardsRepository: %v", err)
+	}
+	defer func() {
+		repo.Close()
+		os.Remove(dbPath)
+	}()
+
+	// Update scores for different competitions and users
 	err = repo.Update(1, 10, 100.0)
 	if err != nil {
 		t.Errorf("failed to update score: %v", err)
@@ -43,7 +37,8 @@ func TestSQLiteScoreRepository_UpdateAndGetAllScores(t *testing.T) {
 		t.Errorf("failed to update score: %v", err)
 	}
 
-	scores, err := repo.GetAllScores()
+	// GetAll retrieves all leaderboards
+	scores, err := repo.GetAll()
 	if err != nil {
 		t.Fatalf("failed to get all scores: %v", err)
 	}

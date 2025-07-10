@@ -1,0 +1,24 @@
+package repositories
+
+import "common"
+
+// MockLeaderboardsRepo is a mock implementation of LeaderboardsRepository for testing purposes
+type MockLeaderboardsRepo struct {
+	Updates []struct {
+		compID, userID uint
+		score          float64
+	}
+	ReturnErr error
+}
+
+// Update appends the update to the mock's updates slice and returns the configured error
+func (m *MockLeaderboardsRepo) Update(competitionID, userID uint, score float64) error {
+	m.Updates = append(m.Updates, struct {
+		compID, userID uint
+		score          float64
+	}{competitionID, userID, score})
+	return m.ReturnErr
+}
+
+// GetAll returns an empty map and nil error for the mock implementation
+func (m *MockLeaderboardsRepo) GetAll() (map[uint][]common.User, error) { return nil, nil }

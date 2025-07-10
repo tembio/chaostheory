@@ -1,18 +1,18 @@
-package main
+package internal
 
 import "common"
 
 // MockRuleEvaluator implements RuleEvaluatorInterface for testing
-// It allows custom behavior for EvaluateRules
-
 type MockRuleEvaluator struct {
-	matches       []Match
-	evaluateError error
+	Matches       []Match
+	EvaluateError error
 }
 
+// AddRule is a no-op for the mock implementation
 func (m *MockRuleEvaluator) AddRule(rule string) {
 }
 
+// EvaluateRules simulates rule evaluation by returning predefined matches
 func (m *MockRuleEvaluator) EvaluateRules(event common.BetEvent) ([]Match, error) {
-	return m.matches, m.evaluateError
+	return m.Matches, m.EvaluateError
 }

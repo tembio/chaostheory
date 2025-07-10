@@ -1,4 +1,4 @@
-package main
+package internal
 
 import (
 	"github.com/rabbitmq/amqp091-go"
