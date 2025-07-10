@@ -13,7 +13,7 @@ RUN go build -o leaderboard .
 
 # Ensure init_db.sh is executable and initialize the database schema
 RUN chmod +x ./init_db.sh
-RUN ./init_db.sh leaderboard.db
+RUN ./init_db.sh db/leaderboard.db
 
 # Install SQLite runtime
 RUN apk add --no-cache sqlite-libs

@@ -92,7 +92,7 @@ func authMiddleware(next http.Handler) http.Handler {
 }
 
 func initialiseRepositories() (*repositories.SQLiteLeaderboards, *repositories.SQLiteCompetitions, error) {
-	dbPath := "leaderboard.db"
+	dbPath := "db/leaderboard.db"
 	leaderboardsRepo, err := repositories.NewSQLiteLeaderboardsRepository(dbPath)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error initializing SQLiteLeaderboardsRepository: %v", err)

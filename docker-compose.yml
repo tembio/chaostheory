@@ -26,6 +26,11 @@ services:
       - "8080:8080"
     networks:
       - localnet
+    volumes:
+      - db_data:/db
+
+volumes:
+  db_data:
 
 networks:
   localnet:
