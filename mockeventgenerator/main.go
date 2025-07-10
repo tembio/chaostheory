@@ -7,17 +7,8 @@ import (
 	"time"
 
 	"common"
+	"mockeventgenerator/internal"
 )
-
-// Config holds the configuration for event generation
-type Config struct {
-	EventRateMean        uint              `json:"eventRateMean"`
-	EventRateStd         uint              `json:"eventRateStd"`
-	Interval             uint              `json:"interval"`
-	MaxNumberOfUsers     uint              `json:"maxNumberOfUsers"`
-	DefaultNumberOfUsers uint              `json:"defaultNumberOfUsers"`
-	PossibleBetValues    PossibleBetValues `json:"possibleBetValues"`
-}
 
 func main() {
 	config, err := LoadConfig("config.json")
@@ -26,17 +17,17 @@ func main() {
 		return
 	}
 
-	eventFactory := NewEventFactory(&config.PossibleBetValues)
-	eventGenerator := NewEventGenerator(config, eventFactory)
+	eventFactory := internal.NewEventFactory(&config.PossibleBetValues)
+	eventGenerator := internal.NewEventGenerator(config, eventFactory)
 
 	rabbitPort := os.Getenv("RABBITMQ_PORT")
 	rabbitURL := fmt.Sprintf("amqp://guest:guest@rabbitleaderboard:%s/", rabbitPort)
 	userQueue := "user_events"
 	betQueue := "bet_events"
 
-	var userSender *RabbitMQSender
+	var userSender *internal.RabbitMQSender
 	for {
-		userSender, err = NewRabbitMQSender(rabbitURL, userQueue)
+		userSender, err = internal.NewRabbitMQSender(rabbitURL, userQueue)
 		if err == nil {
 			break
 		}
@@ -45,7 +36,7 @@ func main() {
 	}
 	defer userSender.Close()
 
-	betSender, err := NewRabbitMQSender(rabbitURL, betQueue)
+	betSender, err := internal.NewRabbitMQSender(rabbitURL, betQueue)
 	if err != nil {
 		fmt.Printf("Error creating bet event sender: %v\n", err)
 		return
@@ -72,14 +63,14 @@ func main() {
 }
 
 // LoadConfig reads the EventGenerator config from a JSON file
-func LoadConfig(path string) (*Config, error) {
+func LoadConfig(path string) (*internal.Config, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
 	defer file.Close()
 
-	var config Config
+	var config internal.Config
 	decoder := json.NewDecoder(file)
 	if err := decoder.Decode(&config); err != nil {
 		return nil, err
