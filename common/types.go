@@ -1,6 +1,22 @@
 package common
 
-// EventType represents the type of event
+// User represents a user entity
+type User struct {
+	ID    uint
+	Score float64
+}
+
+// Competition represents a competition entity
+type Competition struct {
+	ID        uint           `json:"id"`
+	Name      string         `json:"name"`
+	ScoreRule string         `json:"score_rule"`
+	StartTime string         `json:"start_time"`
+	EndTime   string         `json:"end_time"`
+	Rewards   map[string]int `json:"rewards"`
+}
+
+// EventType represents the type of event in the system
 type EventType string
 
 func (e EventType) String() string {
@@ -14,14 +30,13 @@ const (
 	EventTypeCreateUser EventType = "create_user"
 )
 
+// Event is an interface that defines the methods required for an event
 type Event interface {
-	// GetEventID returns the event ID
 	GetEventID() uint
-	// GetEventType returns the type of the event
 	GetEventType() EventType
 }
 
-// BetEvent represents a bet event
+// BetEvent represents a betting event in the system
 type BetEvent struct {
 	EventID      uint      `json:"event_id"`
 	EventType    EventType `json:"event_type"`
@@ -35,14 +50,6 @@ type BetEvent struct {
 	Timestamp    string    `json:"timestamp"`
 }
 
-// UserEvent represents a user event with a monotonically increasing id
-type UserEvent struct {
-	EventID   uint      `json:"event_id"`
-	EventType EventType `json:"event_type"`
-	UserID    uint      `json:"user_id"`
-}
-
-// BetEvent implements Event interface
 func (b BetEvent) GetEventID() uint {
 	return b.EventID
 }
@@ -51,7 +58,13 @@ func (b BetEvent) GetEventType() EventType {
 	return b.EventType
 }
 
-// UserEvent implements Event interface
+// UserEvent represents an event related to a user
+type UserEvent struct {
+	EventID   uint      `json:"event_id"`
+	EventType EventType `json:"event_type"`
+	UserID    uint      `json:"user_id"`
+}
+
 func (u UserEvent) GetEventID() uint {
 	return u.EventID
 }
