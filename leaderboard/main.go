@@ -70,7 +70,7 @@ func main() {
 	competitionsHandler := handlers.NewCompetitionsHandler(competitionsRepo)
 
 	r := mux.NewRouter()
-	r.Handle("/leaderboards", http.HandlerFunc(leaderboardsHandler.GetLeaderboards)).Methods("GET")
+	r.Handle("/leaderboards/{id}", http.HandlerFunc(leaderboardsHandler.GetLeaderboardByID)).Methods("GET")
 	r.Handle("/competitions", authMiddleware(http.HandlerFunc(competitionsHandler.CreateCompetition))).Methods("POST")
 
 	// Start the HTTP server

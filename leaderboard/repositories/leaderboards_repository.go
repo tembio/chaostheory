@@ -13,6 +13,7 @@ import (
 type LeaderboardsRepository interface {
 	Update(competitionID, userID uint, score float64) error
 	GetAll() (map[uint][]common.User, error)
+	GetTopN(competitionID uint, n int) ([]*common.User, error)
 }
 
 // SQLiteLeaderboards implements LeaderboardsRepository using a SQLite database
@@ -65,6 +66,27 @@ func (sr *SQLiteLeaderboards) Update(competitionID, userID uint, score float64) 
 		return err
 	}
 	return nil
+}
+
+// GetTopN retrieves the top N users for a given competition, ordered by greatest score
+func (sr *SQLiteLeaderboards) GetTopN(competitionID uint, n int) ([]*common.User, error) {
+	rows, err := sr.db.Query(`SELECT user_id, score FROM Leaderboards WHERE competition_id = ? ORDER BY score DESC LIMIT ?`, competitionID, n)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var users []*common.User
+	for rows.Next() {
+		var user common.User
+		if err := rows.Scan(&user.ID, &user.Score); err != nil {
+			return nil, err
+		}
+		users = append(users, &user)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return users, nil
 }
 
 // Close closes the SQLite database connection

@@ -70,14 +70,12 @@ func (lb *Leaderboard) Update(event common.BetEvent) ([]*UpdatedData, error) {
 
 	matches, err := lb.ruleEvaluator.EvaluateRules(event)
 	if err != nil {
-		// TODO: use logs
 		return nil, fmt.Errorf("error evaluating rules: %w", err)
 	}
 
 	for _, match := range matches {
 		amount, err := toFloat64(match.Result)
 		if err != nil {
-			// TODO: use logs
 			fmt.Printf("Event %d: Error converting output to float64: %v\n", event.EventID, err)
 			continue // Skip this match if conversion fails
 		}

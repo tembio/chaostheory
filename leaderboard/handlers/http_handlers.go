@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
+
+	"github.com/gorilla/mux"
 
 	"leaderboard/repositories"
 )
@@ -54,6 +57,36 @@ func NewLeaderboardsHandler(repo repositories.LeaderboardsRepository) *Leaderboa
 	}
 }
 
-func (lh *LeaderboardsHandler) GetLeaderboards(w http.ResponseWriter, r *http.Request) {
+// GetLeaderboardByID retrieves the top N users for a given competition ID
+func (lh *LeaderboardsHandler) GetLeaderboardByID(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	idStr := vars["id"]
+	countStr := r.URL.Query().Get("count")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("invalid leaderboard id"))
+		return
+	}
+	count := 10 // default
+	if countStr != "" {
+		c, err := strconv.Atoi(countStr)
+		if err == nil && c > 0 {
+			count = c
+		}
+	}
 
+	users, err := lh.leaderboardsRepo.GetTopN(uint(id), count)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(fmt.Sprintf("failed to get leaderboard: %v", err)))
+		return
+	}
+	if len(users) == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(fmt.Sprintf("leaderboard with id %d not found or has no users", id)))
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(users)
 }
