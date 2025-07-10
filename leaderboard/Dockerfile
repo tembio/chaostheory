@@ -18,8 +18,5 @@ RUN ./init_db.sh leaderboard.db
 # Install SQLite runtime
 RUN apk add --no-cache sqlite-libs
 
-# Expose a port if your app serves HTTP (optional)
-# EXPOSE 8080
-
 # Command to run the binary
 CMD ["./leaderboard"]

@@ -6,6 +6,8 @@ import (
 	"leaderboard/internal"
 	"leaderboard/repositories"
 	"net/http"
+	"os"
+	"time"
 
 	"github.com/gorilla/mux"
 
@@ -26,46 +28,45 @@ func main() {
 	leaderboard := internal.NewLeaderboard(defaultRuleEvaluator)
 
 	// Load existing data from DB
-	if err := LoadLeaderBoardDataFromDB(leaderboard, leaderboardsRepo, competitionsRepo); err != nil {
+	if err := loadLeaderBoardDataFromDB(leaderboard, leaderboardsRepo, competitionsRepo); err != nil {
 		fmt.Printf("Error loading leaderboard data from DB: %v\n", err)
 		return
 	}
 
 	///////// RabbitMQ setup /////////
 
-	// rabbitPort := os.Getenv("RABBITMQ_PORT")
-	// rabbitURL := fmt.Sprintf("amqp://guest:guest@rabbitleaderboard:%s/", rabbitPort)
-	// betQueue := "bet_events"
+	go func() {
+		rabbitPort := os.Getenv("RABBITMQ_PORT")
+		rabbitURL := fmt.Sprintf("amqp://guest:guest@rabbitleaderboard:%s/", rabbitPort)
+		betQueue := "bet_events"
 
-	// var betReceiver *internal.RabbitMQReceiver
-	// for {
-	// 	betReceiver, err = internal.NewRabbitMQReceiver(rabbitURL, betQueue)
-	// 	if err == nil {
-	// 		break
-	// 	}
-	// 	fmt.Printf("RabbitMQ not ready, retrying in 100ms: %v\n", err)
-	// 	time.Sleep(100 * time.Millisecond)
-	// }
-	// defer betReceiver.Close()
+		var betReceiver *internal.RabbitMQReceiver
+		for {
+			betReceiver, err = internal.NewRabbitMQReceiver(rabbitURL, betQueue)
+			if err == nil {
+				break
+			}
+			fmt.Printf("RabbitMQ not ready, retrying in 100ms: %v\n", err)
+			time.Sleep(100 * time.Millisecond)
+		}
+		defer betReceiver.Close()
 
-	// go func() {
-	// 	for {
-	// 		err := betReceiver.Receive(func(body []byte, acknowledgeEvent func()) error {
-	// 			err := handlers.BetEventHandler(body, leaderboard, leaderboardsRepo, acknowledgeEvent)
-	// 			if err != nil {
-	// 				fmt.Printf("Error handling bet event: %v\n", err)
-	// 			}
-	// 			return err
-	// 		})
-	// 		if err != nil {
-	// 			fmt.Printf("Error receiving bet event: %v\n", err)
-	// 		}
-	// 	}
-	// }()
+		for {
+			err := betReceiver.Receive(func(body []byte, acknowledgeEvent func()) error {
+				err := handlers.BetEventHandler(body, leaderboard, leaderboardsRepo, acknowledgeEvent)
+				if err != nil {
+					fmt.Printf("Error handling bet event: %v\n", err)
+				}
+				return err
+			})
+			if err != nil {
+				fmt.Printf("Error receiving bet event: %v\n", err)
+			}
+		}
+	}()
 
 	///////// HTTP server setup /////////
 
-	// Set up HTTP handlers
 	leaderboardsHandler := handlers.NewLeaderboardsHandler(leaderboardsRepo)
 	competitionsHandler := handlers.NewCompetitionsHandler(competitionsRepo)
 
@@ -76,6 +77,18 @@ func main() {
 	// Start the HTTP server
 	fmt.Println("Leaderboard API server listening on :8080")
 	http.ListenAndServe(":8080", r)
+}
+
+// authMiddleware is a simple middleware to check for a hardcoded Authorization header
+func authMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		token := r.Header.Get("Authorization")
+		if token != "Bearer secrettoken" {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 func initialiseRepositories() (*repositories.SQLiteLeaderboards, *repositories.SQLiteCompetitions, error) {
@@ -92,7 +105,7 @@ func initialiseRepositories() (*repositories.SQLiteLeaderboards, *repositories.S
 	return leaderboardsRepo, competitionsRepo, nil
 }
 
-func LoadLeaderBoardDataFromDB(lb *internal.Leaderboard, leaderboardsRepo *repositories.SQLiteLeaderboards, competitionsRepo *repositories.SQLiteCompetitions) error {
+func loadLeaderBoardDataFromDB(lb *internal.Leaderboard, leaderboardsRepo *repositories.SQLiteLeaderboards, competitionsRepo *repositories.SQLiteCompetitions) error {
 	lbFromDB, err := leaderboardsRepo.GetAll()
 	if err != nil {
 		return fmt.Errorf("error retrieving leaderboards: %v", err)
@@ -107,18 +120,6 @@ func LoadLeaderBoardDataFromDB(lb *internal.Leaderboard, leaderboardsRepo *repos
 		lb.RegisterCompetition(comp)
 	}
 	return nil
-}
-
-// authMiddleware is a simple middleware to check for a hardcoded Authorization header
-func authMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		token := r.Header.Get("Authorization")
-		if token != "Bearer secrettoken" {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
 }
 
 // loadCompetitions loads all competitions from the repository and returns them as a slice in memory
