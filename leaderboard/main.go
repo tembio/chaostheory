@@ -33,7 +33,24 @@ func main() {
 		return
 	}
 
+	///////// HTTP server setup /////////
+	leaderboardsHandler := handlers.NewLeaderboardsHandler(leaderboardsRepo)
+	competitionsHandler := handlers.NewCompetitionsHandler(competitionsRepo)
+	websocketHandler := handlers.NewWebsocketHandler()
+
+	r := mux.NewRouter()
+	r.Handle("/leaderboards/{id}", http.HandlerFunc(leaderboardsHandler.GetLeaderboardByID)).Methods("GET")
+	r.Handle("/competitions", authMiddleware(http.HandlerFunc(competitionsHandler.CreateCompetition))).Methods("POST")
+	r.HandleFunc("/ws", http.HandlerFunc(websocketHandler.WebsocketHandler))
+
+	go func() {
+		// Start the HTTP server
+		fmt.Println("Leaderboard API server listening on :8080")
+		http.ListenAndServe(":8080", r)
+	}()
+
 	///////// RabbitMQ setup /////////
+	eventHandler := handlers.NewBetEventHandler(leaderboardsRepo, leaderboard, websocketHandler)
 
 	go func() {
 		rabbitPort := os.Getenv("RABBITMQ_PORT")
@@ -46,18 +63,18 @@ func main() {
 			if err == nil {
 				break
 			}
-			fmt.Printf("RabbitMQ not ready, retrying in 100ms: %v\n", err)
-			time.Sleep(100 * time.Millisecond)
+			fmt.Printf("RabbitMQ not ready, retrying in 200ms: %v\n", err)
+			time.Sleep(200 * time.Millisecond)
 		}
 		defer betReceiver.Close()
 
 		for {
-			err := betReceiver.Receive(func(body []byte, acknowledgeEvent func()) error {
-				err := handlers.BetEventHandler(body, leaderboard, leaderboardsRepo, acknowledgeEvent)
-				if err != nil {
-					fmt.Printf("Error handling bet event: %v\n", err)
+			err := betReceiver.Receive(func(body []byte, acknowledgeEventFunc func()) error {
+				if err := eventHandler.Handle(body); err != nil {
+					return fmt.Errorf("error handling bet event: %v", err)
 				}
-				return err
+				acknowledgeEventFunc()
+				return nil
 			})
 			if err != nil {
 				fmt.Printf("Error receiving bet event: %v\n", err)
@@ -65,18 +82,8 @@ func main() {
 		}
 	}()
 
-	///////// HTTP server setup /////////
-
-	leaderboardsHandler := handlers.NewLeaderboardsHandler(leaderboardsRepo)
-	competitionsHandler := handlers.NewCompetitionsHandler(competitionsRepo)
-
-	r := mux.NewRouter()
-	r.Handle("/leaderboards/{id}", http.HandlerFunc(leaderboardsHandler.GetLeaderboardByID)).Methods("GET")
-	r.Handle("/competitions", authMiddleware(http.HandlerFunc(competitionsHandler.CreateCompetition))).Methods("POST")
-
-	// Start the HTTP server
-	fmt.Println("Leaderboard API server listening on :8080")
-	http.ListenAndServe(":8080", r)
+	// Block forever so main does not exit while goroutines are running
+	select {}
 }
 
 // authMiddleware is a simple middleware to check for a hardcoded Authorization header
