@@ -2,8 +2,8 @@ package common
 
 // User represents a user entity
 type User struct {
-	ID    uint
-	Score float64
+	ID    uint    `json:"id"`
+	Score float64 `json:"score"`
 }
 
 // Competition represents a competition entity
