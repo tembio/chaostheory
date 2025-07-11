@@ -1,7 +1,7 @@
 {
-  "eventRateMean": 1,
-  "eventRateStd": 1,
-  "interval": 3000,
+  "eventRateMean": 2,
+  "eventRateStd": 2,
+  "interval": 1000,
   "maxNumberOfUsers": 10,
   "defaultNumberOfUsers": 5,
   "possibleBetValues": {
@@ -12,6 +12,7 @@
     },
     "games": ["Poker", "Blackjack"],
     "distributor": ["DistributorX", "evo"],
-    "studio": ["StudioX", "StudioZ"]
+    "studio": ["StudioX", "StudioZ"],
+    "maxAmountPerBet": 100
   }
 }

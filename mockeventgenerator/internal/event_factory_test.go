@@ -9,10 +9,11 @@ import (
 
 func getTestPossibleBetValues() *PossibleBetValues {
 	return &PossibleBetValues{
-		Currencies:  map[string]float64{"USD": 1.0, "EUR": 0.9},
-		Games:       []string{"Poker", "Blackjack"},
-		Distributor: []string{"DistA", "DistB"},
-		Studio:      []string{"StudioX", "StudioY"},
+		Currencies:      map[string]float64{"USD": 1.0, "EUR": 0.9},
+		Games:           []string{"Poker", "Blackjack"},
+		Distributor:     []string{"DistA", "DistB"},
+		Studio:          []string{"StudioX", "StudioY"},
+		MaxAmountPerBet: 100.0,
 	}
 }
 
@@ -28,7 +29,7 @@ func TestCreateBetEvent(t *testing.T) {
 	if betEvent.EventType != eventType {
 		t.Errorf("expected EventType %v, got %v", eventType, betEvent.EventType)
 	}
-	if betEvent.Amount < 1.0 || betEvent.Amount > 1001.0 {
+	if betEvent.Amount < 1.0 || betEvent.Amount > 101.0 {
 		t.Errorf("amount %f out of range", betEvent.Amount)
 	}
 	if _, ok := factory.PossibleBetValues.Currencies[betEvent.Currency]; !ok {

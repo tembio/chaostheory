@@ -9,10 +9,11 @@ import (
 
 // PossibleBetValues represents the possible values for a bet event
 type PossibleBetValues struct {
-	Currencies  map[string]float64 `json:"currencies"`
-	Games       []string           `json:"games"`
-	Distributor []string           `json:"distributor"`
-	Studio      []string           `json:"studio"`
+	Currencies      map[string]float64 `json:"currencies"`
+	Games           []string           `json:"games"`
+	Distributor     []string           `json:"distributor"`
+	Studio          []string           `json:"studio"`
+	MaxAmountPerBet float64            `json:"maxAmountPerBet"`
 }
 
 type EventFactory struct {
@@ -26,7 +27,7 @@ type EventFactory struct {
 func (ef *EventFactory) CreateBetEvent(userID uint, eventType common.EventType) common.BetEvent {
 	possibleValues := ef.PossibleBetValues
 
-	amount := rand.Float64()*1000 + 1
+	amount := rand.Float64()*possibleValues.MaxAmountPerBet + 1
 	currencies := make([]string, 0, len(possibleValues.Currencies))
 	for k := range possibleValues.Currencies {
 		currencies = append(currencies, k)

@@ -23,11 +23,3 @@ echo "[INFO] Copied 'common' directory into mockeventgenerator."
 docker build -t mockeventgenerator "$SCRIPT_DIR"
 
 echo "[INFO] mockeventgenerator built"
-
-
-
-echo "[INFO] Building rabbitMQ"
-
-docker build -f Dockerfile.rabbitmq -t rabbitleaderboard .
-
-echo "[INFO] rabbitMQ built"
