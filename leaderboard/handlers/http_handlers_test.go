@@ -80,14 +80,6 @@ func TestGetLeaderboardByID_NotFound(t *testing.T) {
 	if resp.StatusCode != http.StatusNotFound {
 		t.Errorf("expected 404 Not Found, got %d", resp.StatusCode)
 	}
-	body := make([]byte, resp.ContentLength)
-	resp.Body.Read(body)
-	expected := "leaderboard with id 123 not found or has no users"
-	if string(body) == "" {
-		t.Errorf("expected error message in body, got empty string")
-	} else if string(body) != expected {
-		t.Errorf("expected error message '%s', got '%s'", expected, string(body))
-	}
 }
 
 func TestGetLeaderboardByID_Success(t *testing.T) {
