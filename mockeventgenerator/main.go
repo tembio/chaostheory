@@ -31,8 +31,8 @@ func main() {
 		if err == nil {
 			break
 		}
-		fmt.Printf("RabbitMQ not ready, retrying in 100ms: %v\n", err)
-		time.Sleep(100 * time.Millisecond)
+		fmt.Printf("RabbitMQ not ready, retrying in 200ms: %v\n", err)
+		time.Sleep(200 * time.Millisecond)
 	}
 	defer userSender.Close()
 
@@ -56,6 +56,7 @@ func main() {
 					fmt.Printf("Failed to send bet event: %v\n", err)
 				}
 			}
+			fmt.Printf("Sent event: %s\n", eventType)
 		}
 	}
 
