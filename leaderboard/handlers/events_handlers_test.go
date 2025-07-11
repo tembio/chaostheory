@@ -18,7 +18,7 @@ func TestBetEventHandler_Success(t *testing.T) {
 	ackFn := func() { ack = true }
 	betEvent := common.BetEvent{EventID: 1, EventType: common.EventTypeBet, UserID: 2, Amount: 100}
 	body, _ := json.Marshal(betEvent)
-	err := BetEventHandler(body, mockLB, mockRepo, ackFn)
+	updatedData, err := BetEventHandler(body, mockLB, mockRepo, ackFn)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -31,6 +31,12 @@ func TestBetEventHandler_Success(t *testing.T) {
 	if len(mockRepo.Updates) != 1 {
 		t.Errorf("expected 1 repo update, got %d", len(mockRepo.Updates))
 	}
+	if updatedData == nil || len(updatedData) != 1 {
+		t.Errorf("expected 1 updatedData, got %v", updatedData)
+	}
+	if updatedData[0].CompetitionID != 1 || updatedData[0].UserID != 2 || updatedData[0].Score != 100 {
+		t.Errorf("unexpected updatedData: %+v", updatedData[0])
+	}
 }
 
 func TestBetEventHandler_UnmarshalError(t *testing.T) {
@@ -38,9 +44,12 @@ func TestBetEventHandler_UnmarshalError(t *testing.T) {
 	mockRepo := &repositories.MockLeaderboardsRepo{}
 	ackFn := func() {}
 	body := []byte("notjson")
-	err := BetEventHandler(body, mockLB, mockRepo, ackFn)
+	updatedData, err := BetEventHandler(body, mockLB, mockRepo, ackFn)
 	if err == nil || err.Error() == "" {
 		t.Error("expected error for invalid JSON")
+	}
+	if updatedData != nil {
+		t.Errorf("expected nil updatedData for unmarshal error, got %v", updatedData)
 	}
 }
 
@@ -50,9 +59,12 @@ func TestBetEventHandler_LeaderboardUpdateError(t *testing.T) {
 	ackFn := func() {}
 	betEvent := common.BetEvent{EventID: 1, EventType: common.EventTypeBet, UserID: 2, Amount: 100}
 	body, _ := json.Marshal(betEvent)
-	err := BetEventHandler(body, mockLB, mockRepo, ackFn)
+	updatedData, err := BetEventHandler(body, mockLB, mockRepo, ackFn)
 	if err == nil || err.Error() == "" {
 		t.Error("expected error from leaderboard.Update")
+	}
+	if updatedData != nil {
+		t.Errorf("expected nil updatedData for leaderboard update error, got %v", updatedData)
 	}
 }
 
@@ -62,10 +74,8 @@ func TestBetEventHandler_RepoUpdateError(t *testing.T) {
 	ackFn := func() {}
 	betEvent := common.BetEvent{EventID: 1, EventType: common.EventTypeBet, UserID: 2, Amount: 100}
 	body, _ := json.Marshal(betEvent)
-	err := BetEventHandler(body, mockLB, mockRepo, ackFn)
+	_, err := BetEventHandler(body, mockLB, mockRepo, ackFn)
 	if err == nil || err.Error() == "" {
 		t.Error("expected error from repo.Update")
 	}
 }
-
-// You can add similar tests for UserEventHandler as needed.
