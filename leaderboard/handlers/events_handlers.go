@@ -27,21 +27,23 @@ func NewBetEventHandler(repo repositories.LeaderboardsRepository, leaderboard in
 	}
 }
 
-func (beh *BetEventHandler) Handle(body []byte, acknowledgeEventFunc func()) error {
+func (beh *BetEventHandler) Handle(body []byte) error {
 	var betEvent common.BetEvent
 	if err := json.Unmarshal(body, &betEvent); err == nil {
+		fmt.Printf("Received bet event: %+v\n", betEvent)
+
 		updatedData, err := beh.leaderboard.Update(betEvent)
 		if err != nil {
+			println("Error updating leaderboard:", err)
 			return fmt.Errorf("error updating leaderboard: %v", err)
 		}
 
 		for _, update := range updatedData {
-			err := beh.leaderboardsRepo.Update(update.CompetitionID, update.UserID, update.Score)
-			if err != nil {
+			if err := beh.leaderboardsRepo.Update(update.CompetitionID, update.UserID, update.Score); err != nil {
+				println("Error storing score in SQLite:", err)
 				return fmt.Errorf("error storing score in SQLite: %v", err)
 			}
 		}
-		acknowledgeEventFunc() // Acknowledge the message after processing
 
 		go sendCompetitionsUpdatesToWebsocket(beh.websocketHandler, beh.leaderboardsRepo, updatedData)
 
@@ -58,11 +60,10 @@ func NewUserEventHandler(repo repositories.LeaderboardsRepository) *UserEventHan
 	}
 }
 
-func (ueh *UserEventHandler) UserEventHandler(body []byte, acknowledgeEventFunc func()) error {
+func (ueh *UserEventHandler) UserEventHandler(body []byte) error {
 	var userEvent common.UserEvent
 	if err := json.Unmarshal(body, &userEvent); err == nil {
 		// EXTRA FUNCTIONALITY: Store user in SQLite
-		acknowledgeEventFunc() // Acknowledge the message after processing
 		return nil
 
 	} else {
@@ -71,7 +72,9 @@ func (ueh *UserEventHandler) UserEventHandler(body []byte, acknowledgeEventFunc 
 }
 
 func sendCompetitionsUpdatesToWebsocket(handler *WebsocketHandler, leaderboardsRepo repositories.LeaderboardsRepository, updates []*internal.UpdatedData) {
-	if handler != nil {
+	if handler == nil {
+		fmt.Println("WebSocket handler is not initialized")
+
 		return // If no WebSocket handler, skip sending updates
 	}
 
