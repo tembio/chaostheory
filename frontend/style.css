@@ -1,0 +1,92 @@
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #181a20;
+    margin: 0;
+    padding: 0;
+    color: #eaeaea;
+}
+h1 {
+    text-align: center;
+    color: #eaeaea;
+    margin-top: 32px;
+}
+#competitions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 32px;
+    max-width: 1200px;
+    margin: 32px auto;
+    padding: 0;
+}
+.competition-table {
+    background: #23263a;
+    border-radius: 10px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+    padding: 18px 18px 8px 18px;
+    min-width: 260px;
+    max-width: 320px;
+    margin-bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+h2 {
+    color: #7ab8ff;
+    margin-top: 0;
+    margin-bottom: 12px;
+    text-align: center;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0;
+}
+th, td {
+    padding: 10px 12px;
+    text-align: left;
+}
+th {
+    background: #2a2d3e;
+    color: #7ab8ff;
+    font-weight: 600;
+    border-bottom: 2px solid #3a3e5c;
+}
+td {
+    background: #23263a;
+    color: #eaeaea;
+    border-bottom: 1px solid #2a2d3e;
+}
+tr:last-child td {
+    border-bottom: none;
+}
+@media (max-width: 900px) {
+    #competitions {
+        gap: 18px;
+    }
+    .competition-table {
+        min-width: 180px;
+        max-width: 98vw;
+        padding: 10px;
+    }
+}
+@media (max-width: 600px) {
+    #competitions {
+        gap: 8px;
+    }
+    th, td {
+        padding: 7px 4px;
+    }
+}
+.highlight-cell {
+    animation: highlightCell 2s;
+    background: #468a58 !important;
+    color: #6ec18e !important;
+    font-weight: bold !important;
+    transition: color 0.8s linear, font-weight 0.8s linear;
+}
+@keyframes highlightCell {
+    0% { color: #468a58; font-weight: bold; background: #468a58; }
+    62.5% { color: #468a58; font-weight: bold; background: #468a58; }
+    100% { color: #eaeaea; font-weight: normal; background: #6ec18e; }
+}
