@@ -56,7 +56,7 @@ func main() {
 					fmt.Printf("Failed to send bet event: %v\n", err)
 				}
 			}
-			fmt.Printf("Sent event: %s\n", eventType)
+			fmt.Printf("Sent event: %s\n", eventType.String())
 		}
 	}
 
