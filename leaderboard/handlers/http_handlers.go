@@ -9,18 +9,21 @@ import (
 
 	"github.com/gorilla/mux"
 
+	"leaderboard/internal"
 	"leaderboard/repositories"
 )
 
 // CompetitionsHandler holds dependencies for competition handlers
 type CompetitionsHandler struct {
 	competitionsRepo repositories.CompetitionsRepository
+	leaderboard      internal.LeaderboardInterface
 }
 
 // NewCompetitionsHandler creates a new CompetitionHandler instance
-func NewCompetitionsHandler(repo repositories.CompetitionsRepository) *CompetitionsHandler {
+func NewCompetitionsHandler(repo repositories.CompetitionsRepository, leaderboard internal.LeaderboardInterface) *CompetitionsHandler {
 	return &CompetitionsHandler{
 		competitionsRepo: repo,
+		leaderboard:      leaderboard,
 	}
 }
 
@@ -40,6 +43,8 @@ func (ch *CompetitionsHandler) CreateCompetition(w http.ResponseWriter, r *http.
 		w.Write([]byte(fmt.Sprintf("failed to create competition: %v", err)))
 		return
 	}
+
+	ch.leaderboard.RegisterCompetition(&competition)
 
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]interface{}{"id": id})

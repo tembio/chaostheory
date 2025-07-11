@@ -35,7 +35,7 @@ func main() {
 
 	///////// HTTP server setup /////////
 	leaderboardsHandler := handlers.NewLeaderboardsHandler(leaderboardsRepo)
-	competitionsHandler := handlers.NewCompetitionsHandler(competitionsRepo)
+	competitionsHandler := handlers.NewCompetitionsHandler(competitionsRepo, leaderboard)
 	websocketHandler := handlers.NewWebsocketHandler()
 
 	r := mux.NewRouter()

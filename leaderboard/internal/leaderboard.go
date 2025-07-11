@@ -47,12 +47,10 @@ func NewLeaderboard(evaluator RuleEvaluator) *Leaderboard {
 // If the competition's score rule is empty or already registered, it skips registration.
 func (lb *Leaderboard) RegisterCompetition(comp *common.Competition) {
 	if comp == nil || comp.ScoreRule == "" {
-		// TODO: use logs
 		fmt.Printf("Skipping registration of competition due to empty ScoreRule\n")
 		return
 	}
 	if _, exists := lb.rulesToCompetition[comp.ScoreRule]; exists {
-		// TODO: use logs
 		fmt.Printf("Competition with ScoreRule '%s' already registered for competition ID %d\n", comp.ScoreRule, comp.ID)
 		return
 	}

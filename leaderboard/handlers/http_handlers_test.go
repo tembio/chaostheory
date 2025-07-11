@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"leaderboard/internal"
 	"leaderboard/repositories"
 
 	"github.com/gorilla/mux"
@@ -17,7 +18,8 @@ import (
 
 func TestCreateCompetitionHandler(t *testing.T) {
 	repo := &repositories.MockCompetitions{}
-	h := NewCompetitionsHandler(repo)
+	mockLB := &mockLeaderboard{}
+	ch := &CompetitionsHandler{competitionsRepo: repo, leaderboard: mockLB}
 	competition := common.Competition{
 		Name:      "Test Comp",
 		ScoreRule: "rule",
@@ -28,7 +30,7 @@ func TestCreateCompetitionHandler(t *testing.T) {
 	body, _ := json.Marshal(competition)
 	req := httptest.NewRequest("POST", "/competitions", bytes.NewReader(body))
 	w := httptest.NewRecorder()
-	h.CreateCompetition(w, req)
+	ch.CreateCompetition(w, req)
 	resp := w.Result()
 	if resp.StatusCode != http.StatusCreated {
 		t.Errorf("expected status 201, got %d", resp.StatusCode)
@@ -37,31 +39,42 @@ func TestCreateCompetitionHandler(t *testing.T) {
 	if !bytes.Contains(respBody, []byte("id")) {
 		t.Errorf("expected response to contain id, got %s", string(respBody))
 	}
+	if !mockLB.called {
+		t.Errorf("expected RegisterCompetition to be called")
+	}
 }
 
 func TestCreateCompetitionHandler_BadJSON(t *testing.T) {
 	repo := &repositories.MockCompetitions{}
-	h := NewCompetitionsHandler(repo)
+	mockLB := &mockLeaderboard{}
+	ch := &CompetitionsHandler{competitionsRepo: repo, leaderboard: mockLB}
 	req := httptest.NewRequest("POST", "/competitions", bytes.NewReader([]byte("notjson")))
 	w := httptest.NewRecorder()
-	h.CreateCompetition(w, req)
+	ch.CreateCompetition(w, req)
 	resp := w.Result()
 	if resp.StatusCode != http.StatusBadRequest {
 		t.Errorf("expected status 400, got %d", resp.StatusCode)
+	}
+	if mockLB.called {
+		t.Errorf("RegisterCompetition should not be called on bad JSON")
 	}
 }
 
 func TestCreateCompetitionHandler_CreateError(t *testing.T) {
 	repo := &repositories.MockCompetitions{CreateErr: fmt.Errorf("create error")}
-	h := NewCompetitionsHandler(repo)
+	mockLB := &mockLeaderboard{}
+	ch := &CompetitionsHandler{competitionsRepo: repo, leaderboard: mockLB}
 	competition := common.Competition{Name: "Test Comp"}
 	body, _ := json.Marshal(competition)
 	req := httptest.NewRequest("POST", "/competitions", bytes.NewReader(body))
 	w := httptest.NewRecorder()
-	h.CreateCompetition(w, req)
+	ch.CreateCompetition(w, req)
 	resp := w.Result()
 	if resp.StatusCode != http.StatusInternalServerError {
 		t.Errorf("expected status 500, got %d", resp.StatusCode)
+	}
+	if mockLB.called {
+		t.Errorf("RegisterCompetition should not be called on create error")
 	}
 }
 
@@ -139,3 +152,16 @@ var errTest = &mockError{"repo error"}
 type mockError struct{ msg string }
 
 func (e *mockError) Error() string { return e.msg }
+
+type mockLeaderboard struct {
+	called bool
+}
+
+func (m *mockLeaderboard) RegisterCompetition(c *common.Competition) {
+	m.called = true
+}
+
+func (m *mockLeaderboard) Update(event common.BetEvent) ([]*internal.UpdatedData, error) {
+	return nil, nil
+}
+func (m *mockLeaderboard) Load(data map[uint]map[uint]*common.User) {}
