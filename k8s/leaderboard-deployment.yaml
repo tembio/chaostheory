@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: leaderboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: leaderboard
+  template:
+    metadata:
+      labels:
+        app: leaderboard
+    spec:
+      containers:
+      - name: leaderboard
+        imagePullPolicy: Never
+        image: leaderboard
+        ports:
+        - containerPort: 8080
+        env:
+        - name: RABBITMQ_PORT
+          value: "5672"
+        - name: RABBITMQ_HOST
+          value: "rabbitmq"
+        - name: DB_PATH
+          value: "/data/leaderboard.db"
+        volumeMounts:
+        - name: leaderboard-pv
+          mountPath: /data
+      volumes:
+      - name: leaderboard-pv
+        persistentVolumeClaim:
+          claimName: leaderboard-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: leaderboard
+spec:
+  selector:
+    app: leaderboard
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+  type: NodePort 
