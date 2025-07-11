@@ -37,8 +37,8 @@ curl -X POST http://localhost:8080/competitions \
   -H "Authorization: Bearer secrettoken" \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "Poker Weekend",
-    "score_rule": "event_type==\"bet\" && game==\"Poker\" ? amount : 0",
+    "name": "Blackjack Weekend",
+    "score_rule": "event_type==\"bet\" && game==\"Blackjack\" ? amount : 0",
     "start_time": "2025-07-12T00:00:00Z",
     "end_time": "2025-07-13T23:59:59Z",
     "rewards": {"1": 300, "2-3": 100}
@@ -60,6 +60,10 @@ invalid id
 curl -X GET http://localhost:8080/leaderboards/abc
 
   TODO::
+
+  Check TODOS
   logs instead of prints
   not expose internal error (for example DB)
   proper checks for validity of data
+  DELETE EVERYTHING IMAGES, VOLUMES...and start 
+  CHECK KUBERNETES!!
