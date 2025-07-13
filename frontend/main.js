@@ -7,9 +7,8 @@ function renderCompetitions(dataArr, highlightUser = null, compId = null, highli
     container.innerHTML = "";
     dataArr.forEach(event => {
         // Sort users by score descending
-        const sortedUsers = [...event.Users].sort((a, b) => b.score - a.score);
         let table = `<div class='competition-table'><h2>Competition ${event.CompetitionID}</h2><table><thead><tr><th style='text-align:center; width:90px;'>User</th><th style='text-align:center;'>Score</th></tr></thead><tbody>`;
-        sortedUsers.forEach(user => {
+        event.Users.forEach(user => {
             let highlightUserClass = (highlightUser && compId === event.CompetitionID && user.id === highlightUser) ? "highlight-row" : "";
             let scoreFormatted = `$ ${parseFloat(user.score).toFixed(2)}`;
             let cellId = `score-${event.CompetitionID}-${user.id}`;
