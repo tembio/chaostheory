@@ -29,6 +29,14 @@ services:
     volumes:
       - db_data:/db
 
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "8081:8081"
+    networks:
+      - localnet
+
 volumes:
   db_data:
 
