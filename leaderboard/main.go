@@ -54,7 +54,9 @@ func main() {
 
 	go func() {
 		rabbitPort := os.Getenv("RABBITMQ_PORT")
-		rabbitURL := fmt.Sprintf("amqp://guest:guest@rabbitleaderboard:%s/", rabbitPort)
+		rabbitHost := os.Getenv("RABBITMQ_HOST")
+
+		rabbitURL := fmt.Sprintf("amqp://guest:guest@%s:%s/", rabbitHost, rabbitPort)
 		betQueue := "bet_events"
 
 		var betReceiver *internal.RabbitMQReceiver

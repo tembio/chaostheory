@@ -21,7 +21,8 @@ func main() {
 	eventGenerator := internal.NewEventGenerator(config, eventFactory)
 
 	rabbitPort := os.Getenv("RABBITMQ_PORT")
-	rabbitURL := fmt.Sprintf("amqp://guest:guest@rabbitleaderboard:%s/", rabbitPort)
+	rabbitHost := os.Getenv("RABBITMQ_HOST")
+	rabbitURL := fmt.Sprintf("amqp://guest:guest@%s:%s/", rabbitHost, rabbitPort)
 	userQueue := "user_events"
 	betQueue := "bet_events"
 
