@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#minikube start
+# minikube needs to be installed and running:  minikube start
 
 eval $(minikube docker-env)
 
