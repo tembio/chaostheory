@@ -16,7 +16,7 @@ I've provided two ways of building/running the project:
       The webpage for the leaderboard will be in http://localhost:8081/
       The RabbitMQ console can be accessed in http://localhost:15672/
 
-      If we kill the leaderboard service, it will NOT start automatically, for that we need to use the other running process using Kubernetes explained below. 
+      If we kill the leaderboard service, it will NOT start automatically, for that we need to use the other way running the project using Kubernetes explained below. 
       If we restart the leaderboard manually it will keep the state, and will continue working normally.
 
     - The other way, is using kubernetes, having a local cluster with minikube.
