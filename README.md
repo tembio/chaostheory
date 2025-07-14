@@ -20,7 +20,7 @@ I've provided two ways of building/running the project:
       If we restart the leaderboard manually it will keep the state, and will continue working normally.
 
     - The other way, is using kubernetes, having a local cluster with minikube.
-      In order to do that run the `build_k8s.sh` script, that will build the docker images and create the necessary
+      In order to do that,we need to run the `build_k8s.sh` script. That will build the docker images and create the necessary
       deployments and services to maintain always the `leaderboard` service running, recreating it if it is shutdown manually.
       As mentioned before, having minikube is a requirement for this setup, it needs to be installed and running:
       `minikube start`
