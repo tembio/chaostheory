@@ -23,13 +23,3 @@ There could be a mock for tests, or another one to, for example, print messages 
 Run `./build.sh` to create the images
 Run `docker-compose up` to start rabbit and the event generator
 You can go to the rabbit console to see the messages http://localhost:15672/ (user: guest, password: guest)
-
-
-### Improvements and TODOs
-- Add logging
-- handle new competition events and add the new competitios to event_factory
-
-I created UserEvents but after clarifying requirements they are not needed, I've left the event, but I just don't do anything with it
-
-
-THE default rate is set to 5 to make it easier to visualise
