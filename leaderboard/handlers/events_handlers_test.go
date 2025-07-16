@@ -26,11 +26,60 @@ func TestBetEventHandler_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
+	if !mockRepo.StoreBetEventCalled {
+		t.Error("expected StoreBetEvent to be called before leaderboard update")
+	}
 	if !mockLB.UpdateCalled {
 		t.Error("expected leaderboard.Update to be called")
 	}
 	if len(mockRepo.Updates) != 1 {
 		t.Errorf("expected 1 repo update, got %d", len(mockRepo.Updates))
+	}
+}
+
+func TestBetEventHandler_Idempotency(t *testing.T) {
+	mockLB := &internal.MockLeaderboard{}
+	mockRepo := &repositories.MockLeaderboardsRepo{BetEvents: map[uint]bool{42: true}}
+	betEvent := common.BetEvent{EventID: 42, EventType: common.EventTypeBet, UserID: 2, Amount: 100}
+	body, _ := json.Marshal(betEvent)
+
+	beh := &BetEventHandler{
+		leaderboardsRepo: mockRepo,
+		leaderboard:      mockLB,
+		websocketHandler: nil,
+	}
+	err := beh.Handle(body)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if mockRepo.StoreBetEventCalled {
+		t.Error("StoreBetEvent should not be called for already processed event")
+	}
+	if mockLB.UpdateCalled {
+		t.Error("leaderboard.Update should not be called for already processed event")
+	}
+}
+
+func TestBetEventHandler_StoreBetEventError(t *testing.T) {
+	mockLB := &internal.MockLeaderboard{}
+	mockRepo := &repositories.MockLeaderboardsRepo{StoreBetEventErr: errors.New("store error")}
+	betEvent := common.BetEvent{EventID: 99, EventType: common.EventTypeBet, UserID: 2, Amount: 100}
+	body, _ := json.Marshal(betEvent)
+
+	beh := &BetEventHandler{
+		leaderboardsRepo: mockRepo,
+		leaderboard:      mockLB,
+		websocketHandler: nil,
+	}
+	err := beh.Handle(body)
+	if err == nil || err.Error() == "" {
+		t.Error("expected error from StoreBetEvent")
+	}
+	if !mockRepo.StoreBetEventCalled {
+		t.Error("expected StoreBetEvent to be called")
+	}
+	if mockLB.UpdateCalled {
+		t.Error("leaderboard.Update should not be called if StoreBetEvent fails")
 	}
 }
 

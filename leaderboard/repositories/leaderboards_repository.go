@@ -14,6 +14,8 @@ type LeaderboardsRepository interface {
 	Update(competitionID, userID uint, score float64) error
 	GetAll() (map[uint][]common.User, error)
 	GetTopN(competitionID uint, n int) ([]*common.User, error)
+	HasBetEvent(eventID uint) (bool, error)
+	StoreBetEvent(event *common.BetEvent) error
 }
 
 // SQLiteLeaderboards implements LeaderboardsRepository using a SQLite database
@@ -87,6 +89,19 @@ func (sr *SQLiteLeaderboards) GetTopN(competitionID uint, n int) ([]*common.User
 		return nil, err
 	}
 	return users, nil
+}
+
+// HasBetEvent checks if a bet event with the given eventID exists
+func (sr *SQLiteLeaderboards) HasBetEvent(eventID uint) (bool, error) {
+	var count int
+	err := sr.db.QueryRow("SELECT COUNT(1) FROM BetEvents WHERE event_id = ?", eventID).Scan(&count)
+	return count > 0, err
+}
+
+// StoreBetEvent stores a bet event in the BetEvents table
+func (sr *SQLiteLeaderboards) StoreBetEvent(event *common.BetEvent) error {
+	_, err := sr.db.Exec("INSERT INTO BetEvents (event_id, user_id, amount) VALUES (?, ?, ?)", event.EventID, event.UserID, event.Amount)
+	return err
 }
 
 // Close closes the SQLite database connection

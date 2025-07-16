@@ -19,6 +19,12 @@ CREATE TABLE IF NOT EXISTS Leaderboards (
     PRIMARY KEY (competition_id, user_id)
 );
 
+CREATE TABLE IF NOT EXISTS BetEvents (
+    event_id INTEGER PRIMARY KEY,
+    user_id INTEGER,
+    amount REAL
+);
+
 CREATE TABLE IF NOT EXISTS Competitions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE,

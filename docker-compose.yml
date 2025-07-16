@@ -1,5 +1,5 @@
 services:
-  rabbitmq:
+  rabbitmq-deployment:
     image: rabbitmq:latest
     ports:
       - "5672:5672"
@@ -11,9 +11,9 @@ services:
     image: mockeventgenerator:latest
     environment:
       - RABBITMQ_PORT=5672
-      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_HOST=rabbitmq-deployment
     depends_on:
-      - rabbitmq
+      - rabbitmq-deployment
     networks:
       - localnet
 
@@ -21,7 +21,7 @@ services:
     image: leaderboard:latest
     environment:
       - RABBITMQ_PORT=5672
-      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_HOST=rabbitmq-deployment
     depends_on:
       - mockeventgenerator
     ports:

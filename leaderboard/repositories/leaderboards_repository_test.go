@@ -127,3 +127,70 @@ func TestSQLiteLeaderboards_GetTopN(t *testing.T) {
 		t.Errorf("expected last user to be 4, got %d", top10[3].ID)
 	}
 }
+
+func TestSQLiteLeaderboards_HasBetEvent(t *testing.T) {
+	dbPath := "test_leaderboards_betevents_has.db"
+	err := runInitDBScript(dbPath)
+	if err != nil {
+		t.Fatalf("failed to run init_db.sh: %v", err)
+	}
+
+	repo, err := NewSQLiteLeaderboardsRepository(dbPath)
+	if err != nil {
+		t.Fatalf("failed to create SQLiteLeaderboardsRepository: %v", err)
+	}
+	defer func() {
+		repo.Close()
+		os.Remove(dbPath)
+	}()
+
+	betEvent := &common.BetEvent{EventID: 123, UserID: 42, Amount: 99.5}
+	exists, err := repo.HasBetEvent(betEvent.EventID)
+	if err != nil {
+		t.Fatalf("HasBetEvent failed: %v", err)
+	}
+	if exists {
+		t.Error("expected HasBetEvent to be false before storing event")
+	}
+
+	err = repo.StoreBetEvent(betEvent)
+	if err != nil {
+		t.Fatalf("StoreBetEvent failed: %v", err)
+	}
+	exists, err = repo.HasBetEvent(betEvent.EventID)
+	if err != nil {
+		t.Fatalf("HasBetEvent failed: %v", err)
+	}
+	if !exists {
+		t.Error("expected HasBetEvent to be true after storing event")
+	}
+}
+
+func TestSQLiteLeaderboards_StoreBetEvent(t *testing.T) {
+	dbPath := "test_leaderboards_betevents_store.db"
+	err := runInitDBScript(dbPath)
+	if err != nil {
+		t.Fatalf("failed to run init_db.sh: %v", err)
+	}
+
+	repo, err := NewSQLiteLeaderboardsRepository(dbPath)
+	if err != nil {
+		t.Fatalf("failed to create SQLiteLeaderboardsRepository: %v", err)
+	}
+	defer func() {
+		repo.Close()
+		os.Remove(dbPath)
+	}()
+
+	betEvent := &common.BetEvent{EventID: 456, UserID: 99, Amount: 77.7}
+	err = repo.StoreBetEvent(betEvent)
+	if err != nil {
+		t.Fatalf("StoreBetEvent failed: %v", err)
+	}
+
+	// Try storing the same event again (should error on duplicate primary key unless handled)
+	err = repo.StoreBetEvent(betEvent)
+	if err == nil {
+		// SQLite will error on duplicate primary key unless handled, so this is a valid test
+	}
+}

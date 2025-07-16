@@ -10,8 +10,13 @@ type MockLeaderboardsRepo struct {
 	}
 	AllUsers    map[uint][]common.User
 	TopNUsers   []*common.User
-	ReturnErr   error
 	GetTopNFunc func(competitionID uint, n int) ([]*common.User, error)
+	BetEvents   map[uint]bool
+
+	ReturnErr           error
+	StoreBetEventErr    error
+	StoreBetEventCalled bool
+	LastStoredBetEvent  *common.BetEvent
 }
 
 // Update appends the update to the mock's updates slice and returns the configured error
@@ -34,4 +39,23 @@ func (m *MockLeaderboardsRepo) GetTopN(competitionID uint, n int) ([]*common.Use
 		return m.GetTopNFunc(competitionID, n)
 	}
 	return m.TopNUsers, m.ReturnErr
+}
+
+// HasBetEvent returns true if the eventID is in the BetEvents map
+func (m *MockLeaderboardsRepo) HasBetEvent(eventID uint) (bool, error) {
+	if m.BetEvents == nil {
+		return false, nil
+	}
+	return m.BetEvents[eventID], nil
+}
+
+// StoreBetEvent records the eventID in the BetEvents map and returns configured error
+func (m *MockLeaderboardsRepo) StoreBetEvent(event *common.BetEvent) error {
+	m.StoreBetEventCalled = true
+	m.LastStoredBetEvent = event
+	if m.BetEvents == nil {
+		m.BetEvents = make(map[uint]bool)
+	}
+	m.BetEvents[event.EventID] = true
+	return m.StoreBetEventErr
 }
