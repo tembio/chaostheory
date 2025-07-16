@@ -23,11 +23,13 @@ I've provided two ways of building/running the project:
       In order to do that,we need to run the `build_k8s.sh` script. That will build the docker images and create the necessary
       deployments and services to maintain always the `leaderboard` service running, recreating it if it is shutdown manually.
       As mentioned before, having minikube is a requirement for this setup, it needs to be installed and running:
-      `minikube start`
+      `minikube start --cpus 8 --memory 10g`
+      
+      (RabbitMQ requires ate least that memory, it fails with less)
     
       In order to be able to access the webpage we need to get the IP and port of the cluster, that can be obtained with the command:
 
-      `minikube service frontend --url`
+      `minikube service rabbitmq --url` will give access to the rabbit console in the kuberneted client
 
 
 # Considerations
