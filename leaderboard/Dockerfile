@@ -12,6 +12,7 @@ RUN go mod download
 RUN go build -o leaderboard .
 
 # Ensure init_db.sh is executable and initialize the database schema
+RUN mkdir -p db
 RUN chmod +x ./init_db.sh
 RUN ./init_db.sh db/leaderboard.db
 

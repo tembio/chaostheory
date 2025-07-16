@@ -18,6 +18,13 @@ spec:
         ports:
         - containerPort: 5672
         - containerPort: 15672
+      resources: # Add this block
+        requests:
+          memory: "512Mi" # Request 512 MB of memory
+          cpu: "500m"    # Request 0.5 CPU core
+        limits:
+          memory: "1Gi"  # Limit to 1 GB of memory
+          cpu: "1"       # Limit to 1 CPU core
 ---
 apiVersion: v1
 kind: Service
